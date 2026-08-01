@@ -15,12 +15,25 @@ async function getQuickAuthClient(): Promise<QuickAuthClient | null> {
   }
 
   try {
-    const mod = (await new Function("return import('@farcaster/quick-auth')")()) as {
-      createClient: () => QuickAuthClient;
+    const mod = (await import("@farcaster/quick-auth")) as {
+      createClient?: () => QuickAuthClient;
+      default?: { createClient?: () => QuickAuthClient };
     };
-    quickAuthClient = mod.createClient();
+    const createClient = mod.createClient ?? mod.default?.createClient;
+    if (typeof createClient !== "function") throw new Error("Missing createClient export");
+    quickAuthClient = createClient();
   } catch {
-    quickAuthClient = null;
+    try {
+      const mod = (await new Function("return import('@farcaster/quick-auth')")()) as {
+        createClient?: () => QuickAuthClient;
+        default?: { createClient?: () => QuickAuthClient };
+      };
+      const createClient = mod.createClient ?? mod.default?.createClient;
+      if (typeof createClient !== "function") throw new Error("Missing createClient export");
+      quickAuthClient = createClient();
+    } catch {
+      quickAuthClient = null;
+    }
   }
 
   return quickAuthClient;

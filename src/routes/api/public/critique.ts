@@ -58,23 +58,17 @@ export const Route = createFileRoute("/api/public/critique")({
         const data = parsed.data;
         try {
           const { fidFromToken, insertCritique } = await import("@/lib/colorzao.server");
+          const { resolveCritiqueIdentity } = await import("@/lib/critique-identity");
           const domain = new URL(request.url).hostname;
           const fid = await fidFromToken(data.token, domain);
 
-          if (!fid && !data.anonymous) {
-            return json(
-              {
-                ok: false,
-                error: "not_authenticated",
-                details: "Farcaster authentication required to attach your username.",
-              },
-              401,
-            );
-          }
+          const identity = resolveCritiqueIdentity({
+            anonymous: data.anonymous,
+            username: data.username,
+            fid,
+          });
 
           const comment = (data.comment ?? "").trim().slice(0, 400);
-          const anonymous = data.anonymous || !fid;
-
           const row = await insertCritique({
             discovery_id: data.discoveryId,
             discovery_type: data.discoveryType,
@@ -82,9 +76,9 @@ export const Route = createFileRoute("/api/public/critique")({
             verdict: data.verdict,
             reason: data.reason.slice(0, 80),
             comment: comment.length ? comment : null,
-            anonymous,
-            fid: fid ?? null,
-            username: anonymous ? null : (data.username ?? null),
+            anonymous: identity.anonymous,
+            fid: identity.fid,
+            username: identity.username,
           });
 
           return json({ ok: true, critique: row });
