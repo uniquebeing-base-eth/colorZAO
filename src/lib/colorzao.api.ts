@@ -6,6 +6,7 @@
  * header, which made the CSRF-protected server-function endpoint reject every
  * critique with a 403 ("Could not save your critique").
  */
+import { supabase } from "@/integrations/supabase/client";
 
 export type CritiqueRow = {
   id: string;
@@ -94,10 +95,39 @@ export type CritiqueInput = {
 };
 
 export async function submitCritique(input: CritiqueInput) {
-  return request<{ ok: true; critique: CritiqueRow }>("/api/public/critique", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
+  try {
+    return await request<{ ok: true; critique: CritiqueRow }>("/api/public/critique", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch (error) {
+    // Anonymous critiques are permitted by a narrow database policy. This
+    // keeps saves working on deployments whose server runtime has not exposed
+    // its managed environment bindings, without exposing any private key.
+    if (!input.anonymous) throw error;
+
+    const comment = (input.comment ?? "").trim().slice(0, 400);
+    const { data, error: databaseError } = await supabase
+      .from("critiques")
+      .insert({
+        discovery_id: input.discoveryId,
+        discovery_type: input.discoveryType,
+        discovery_title: input.discoveryTitle,
+        verdict: input.verdict,
+        reason: input.reason.slice(0, 80),
+        comment: comment || null,
+        anonymous: true,
+        fid: null,
+        username: null,
+      } as never)
+      .select(
+        "id, discovery_id, discovery_type, discovery_title, verdict, reason, comment, anonymous, fid, username, created_at",
+      )
+      .single();
+
+    if (databaseError) throw new Error(databaseError.message);
+    return { ok: true as const, critique: data as CritiqueRow };
+  }
 }
 
 export async function listCritiques(discoveryId?: string) {

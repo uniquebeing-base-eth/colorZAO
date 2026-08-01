@@ -229,7 +229,16 @@ function Gallery() {
     setAuthNote(null);
 
     try {
-      const token = await getToken();
+      // Guest saves must never wait on Farcaster. Only request a token when
+      // the person explicitly chooses to attach their identity.
+      const token = anon || !user
+        ? undefined
+        : await Promise.race([
+            getToken(),
+            new Promise<undefined>((_, reject) => {
+              window.setTimeout(() => reject(new Error("Farcaster sign-in timed out.")), 8_000);
+            }),
+          ]);
       const trimmedComment = (comment ?? "").trim().slice(0, 280);
       const submission = await submitCritique({
         token,
