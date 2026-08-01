@@ -5,7 +5,7 @@ import { ArrowRight, ExternalLink, Flame, Check, Lock, Loader2 } from "lucide-re
 import { toast } from "sonner";
 import { PaintCanvas } from "@/components/PaintCanvas";
 import { TopNav } from "@/components/TopNav";
-import { useFarcaster } from "@/lib/useFarcaster";
+import { isUserRejection, useFarcaster } from "@/lib/useFarcaster";
 import { haptic, loadMutePreference, sfx, unlockAudio } from "@/lib/fx";
 import { acceptTerms, registerCanvasPainted, submitCritique } from "@/lib/colorzao.api";
 import {
@@ -170,24 +170,37 @@ function Gallery() {
 
     if (inMiniApp && !alreadySigned) {
       setSigning(true);
+      setAuthNote(null);
       try {
-        const [{ address, signature }, token] = await Promise.all([signTerms(), getToken()]);
-        await acceptTerms({
-          token,
-          username: user?.username ?? null,
-          displayName: user?.displayName ?? null,
-          pfpUrl: user?.pfpUrl ?? null,
-          walletAddress: address,
-          signature,
-        });
+        // Sequential, not Promise.all: Quick Auth and the wallet signature both
+        // open a host modal, and racing them makes the sign sheet disappear.
+        const token = await getToken().catch(() => undefined);
+        const { address, signature } = await signTerms();
+        try {
+          await acceptTerms({
+            token,
+            username: user?.username ?? null,
+            displayName: user?.displayName ?? null,
+            pfpUrl: user?.pfpUrl ?? null,
+            walletAddress: address,
+            signature,
+          });
+        } catch (saveError) {
+          // The signature is what the terms require. A failed/unauthenticated
+          // save must never lock the painter out of the canvas.
+          console.warn("[colorzao] terms accepted but not saved", saveError);
+        }
         window.localStorage.setItem("colorzao:terms", "1");
         void haptic("success");
       } catch (error) {
         console.error("[colorzao] terms signature failed", error);
-        // New painters must sign the terms before their first canvas.
-        setAuthNote("Please sign the terms message in your wallet to start painting.");
         setSigning(false);
-        return;
+        if (isUserRejection(error)) {
+          setAuthNote("Sign the terms message in your wallet to start painting.");
+          return;
+        }
+        // No wallet / SDK hiccup: let them paint instead of dead-ending.
+        setAuthNote("Wallet unavailable — continuing without a signature.");
       } finally {
         setSigning(false);
       }
