@@ -1,0 +1,37 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjg0OTExNiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGQzRDViRmMyOGJjMjA5OTg4NGEzNmVkNDE2NTY4NzRCQ2RENDYzMTUifQ",
+    "payload": "eyJkb21haW4iOiJjb2xvcnphby5zaWduYWxpZnkueHl6In0",
+    "signature": "na98003ikcv/uRWVaDYWJipTveFvoXMSStjgWxCsCrUbhJzKEvFG8eZ4/uWrPs1Vq+M5wXEiUDfVtd5azwYw7xw="
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "ColorZAO",
+    "iconUrl": "https://colorzao.signalify.xyz/icon.png",
+    "homeUrl": "https://colorzao.signalify.xyz",
+    "castShareUrl": "https://colorzao.signalify.xyz",
+    "imageUrl": "https://colorzao.signalify.xyz/colorzao-preview.png",
+    "buttonTitle": "Start Painting",
+    "splashImageUrl": "https://colorzao.signalify.xyz/splash.png",
+    "splashBackgroundColor": "#f7f2e8",
+    "webhookUrl": "https://api.neynar.com/f/app/e2021f2b-c86a-40df-84c6-585c06d1eafd/event",
+    "subtitle": "Paint. Reveal. Discover.",
+    "description": "Paint grayscale art to uncover creators, workshops, projects and creative facts from the ZAO ecosystem.",
+    "primaryCategory": "art-creativity",
+    "tags": [
+      "art",
+      "creativity",
+      "discovery",
+      "base",
+      "zao"
+    ],
+    "heroImageUrl": "https://colorzao.signalify.xyz/colorzao-preview.png",
+    "tagline": "Color Hidden Masterpieces",
+    "ogTitle": "ColorZAO",
+    "ogDescription": "Interactive painting discovery and critique",
+    "ogImageUrl": "https://colorzao.signalify.xyz/colorzao-preview.png"
+  },
+  "baseBuilder": {
+    "ownerAddress": "0x170c5a413136F094421fad8Dd20285b5e05Fff5e"
+  }
+}

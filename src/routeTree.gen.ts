@@ -10,33 +10,142 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as DotwellKnownFarcasterDotjsonRouteImport } from './routes/[.]well-known/farcaster[.]json'
+import { Route as ApiPublicCritiqueRouteImport } from './routes/api/public/critique'
+import { Route as ApiPublicLeaderboardRouteImport } from './routes/api/public/leaderboard'
+import { Route as ApiPublicPainterRouteImport } from './routes/api/public/painter'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HallOfFameRoute = HallOfFameRouteImport.update({
+  id: '/hall-of-fame',
+  path: '/hall-of-fame',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotwellKnownFarcasterDotjsonRoute =
+  DotwellKnownFarcasterDotjsonRouteImport.update({
+    id: '/.well-known/farcaster.json',
+    path: '/.well-known/farcaster.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCritiqueRoute = ApiPublicCritiqueRouteImport.update({
+  id: '/api/public/critique',
+  path: '/api/public/critique',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLeaderboardRoute = ApiPublicLeaderboardRouteImport.update({
+  id: '/api/public/leaderboard',
+  path: '/api/public/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPainterRoute = ApiPublicPainterRouteImport.update({
+  id: '/api/public/painter',
+  path: '/api/public/painter',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
+  '/hall-of-fame': typeof HallOfFameRoute
+  '/profile': typeof ProfileRoute
+  '/.well-known/farcaster.json': typeof DotwellKnownFarcasterDotjsonRoute
+  '/api/public/critique': typeof ApiPublicCritiqueRoute
+  '/api/public/leaderboard': typeof ApiPublicLeaderboardRoute
+  '/api/public/painter': typeof ApiPublicPainterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
+  '/hall-of-fame': typeof HallOfFameRoute
+  '/profile': typeof ProfileRoute
+  '/.well-known/farcaster.json': typeof DotwellKnownFarcasterDotjsonRoute
+  '/api/public/critique': typeof ApiPublicCritiqueRoute
+  '/api/public/leaderboard': typeof ApiPublicLeaderboardRoute
+  '/api/public/painter': typeof ApiPublicPainterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
+  '/hall-of-fame': typeof HallOfFameRoute
+  '/profile': typeof ProfileRoute
+  '/.well-known/farcaster.json': typeof DotwellKnownFarcasterDotjsonRoute
+  '/api/public/critique': typeof ApiPublicCritiqueRoute
+  '/api/public/leaderboard': typeof ApiPublicLeaderboardRoute
+  '/api/public/painter': typeof ApiPublicPainterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/faq'
+    | '/feedback'
+    | '/hall-of-fame'
+    | '/profile'
+    | '/.well-known/farcaster.json'
+    | '/api/public/critique'
+    | '/api/public/leaderboard'
+    | '/api/public/painter'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/faq'
+    | '/feedback'
+    | '/hall-of-fame'
+    | '/profile'
+    | '/.well-known/farcaster.json'
+    | '/api/public/critique'
+    | '/api/public/leaderboard'
+    | '/api/public/painter'
+  id:
+    | '__root__'
+    | '/'
+    | '/faq'
+    | '/feedback'
+    | '/hall-of-fame'
+    | '/profile'
+    | '/.well-known/farcaster.json'
+    | '/api/public/critique'
+    | '/api/public/leaderboard'
+    | '/api/public/painter'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FaqRoute: typeof FaqRoute
+  FeedbackRoute: typeof FeedbackRoute
+  HallOfFameRoute: typeof HallOfFameRoute
+  ProfileRoute: typeof ProfileRoute
+  DotwellKnownFarcasterDotjsonRoute: typeof DotwellKnownFarcasterDotjsonRoute
+  ApiPublicCritiqueRoute: typeof ApiPublicCritiqueRoute
+  ApiPublicLeaderboardRoute: typeof ApiPublicLeaderboardRoute
+  ApiPublicPainterRoute: typeof ApiPublicPainterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +157,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hall-of-fame': {
+      id: '/hall-of-fame'
+      path: '/hall-of-fame'
+      fullPath: '/hall-of-fame'
+      preLoaderRoute: typeof HallOfFameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/farcaster.json': {
+      id: '/.well-known/farcaster.json'
+      path: '/.well-known/farcaster.json'
+      fullPath: '/.well-known/farcaster.json'
+      preLoaderRoute: typeof DotwellKnownFarcasterDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/critique': {
+      id: '/api/public/critique'
+      path: '/api/public/critique'
+      fullPath: '/api/public/critique'
+      preLoaderRoute: typeof ApiPublicCritiqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/leaderboard': {
+      id: '/api/public/leaderboard'
+      path: '/api/public/leaderboard'
+      fullPath: '/api/public/leaderboard'
+      preLoaderRoute: typeof ApiPublicLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/painter': {
+      id: '/api/public/painter'
+      path: '/api/public/painter'
+      fullPath: '/api/public/painter'
+      preLoaderRoute: typeof ApiPublicPainterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FaqRoute: FaqRoute,
+  FeedbackRoute: FeedbackRoute,
+  HallOfFameRoute: HallOfFameRoute,
+  ProfileRoute: ProfileRoute,
+  DotwellKnownFarcasterDotjsonRoute: DotwellKnownFarcasterDotjsonRoute,
+  ApiPublicCritiqueRoute: ApiPublicCritiqueRoute,
+  ApiPublicLeaderboardRoute: ApiPublicLeaderboardRoute,
+  ApiPublicPainterRoute: ApiPublicPainterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
