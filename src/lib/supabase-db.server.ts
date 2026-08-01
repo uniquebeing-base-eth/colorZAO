@@ -38,13 +38,21 @@ let cached: SupabaseClient<Database> | undefined;
 export function serverDb(): SupabaseClient<Database> {
   if (cached) return cached;
 
-  const url = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
+  // VITE_* values are compiled into both browser and server bundles. Keep them
+  // as a fallback because Cloudflare deployments do not always expose the
+  // process.env bindings that are available in the Lovable preview runtime.
+  const url =
+    process.env["SUPABASE_URL"] ??
+    process.env["VITE_SUPABASE_URL"] ??
+    import.meta.env.VITE_SUPABASE_URL;
   const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
   const publishableKey =
     process.env["SUPABASE_PUBLISHABLE_KEY"] ??
     process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
     process.env["SUPABASE_ANON_KEY"] ??
-    process.env["VITE_SUPABASE_ANON_KEY"];
+    process.env["VITE_SUPABASE_ANON_KEY"] ??
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   const key = serviceKey ?? publishableKey;
 
