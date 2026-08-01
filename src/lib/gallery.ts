@@ -14,6 +14,12 @@ import art13 from "@/assets/art-13.jpg";
 import art14 from "@/assets/art-14.jpg";
 import art15 from "@/assets/art-15.jpg";
 import art16 from "@/assets/art-16.jpg";
+import art17 from "@/assets/art-17.jpg";
+import art18 from "@/assets/art-18.jpg";
+import art19 from "@/assets/art-19.jpg";
+import art20 from "@/assets/art-20.jpg";
+import art21 from "@/assets/art-21.jpg";
+import art22 from "@/assets/art-22.jpg";
 
 /** ColorZAO original artworks used for the painting canvas (never project branding). */
 export const artworks = [
@@ -33,6 +39,12 @@ export const artworks = [
   art14,
   art15,
   art16,
+  art17,
+  art18,
+  art19,
+  art20,
+  art21,
+  art22,
 ];
 
 
