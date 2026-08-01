@@ -52,29 +52,31 @@ type MiniAppSdk = {
   };
 };
 
+type EthProvider = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+};
+
+/** True only when the person explicitly declined the signature request. */
+export function isUserRejection(error: unknown) {
+  const code = (error as { code?: number })?.code;
+  const message = String((error as { message?: string })?.message ?? "").toLowerCase();
+  return code === 4001 || message.includes("reject") || message.includes("denied");
+}
 
 let sdkPromise: Promise<MiniAppSdk | null> | undefined;
 
-/**
- * The Mini App SDK talks to a host frame. Outside a Farcaster client that
- * handshake throws inside the SDK itself, so we only load it where a host can
- * plausibly answer: inside an iframe/webview that was not opened from a plain
- * top-level browser tab.
- */
 function couldBeFarcasterHost() {
   if (typeof window === "undefined") return false;
   try {
-    if (window.parent !== window.self || (window as { ReactNativeWebView?: unknown }).ReactNativeWebView) {
-      const referrer = document.referrer;
-      // Lovable editor/preview embeds the app too — skip the handshake there.
-      if (/lovable\.(dev|app|cloud)|localhost/i.test(referrer)) return false;
-      return true;
-    }
+    const referrer = document.referrer;
+    // Lovable editor/preview embeds the app too — skip the handshake there.
+    if (/lovable\.(dev|app|cloud)|localhost/i.test(referrer)) return false;
   } catch {
-    // Cross-origin access to window.parent means we are embedded.
-    return true;
+    /* ignore */
   }
-  return false;
+  // Farcaster / Base App can host the mini app in a top-level native webview,
+  // where window.parent === window.self. Let the SDK decide via isInMiniApp().
+  return true;
 }
 
 async function loadMiniAppSdk(): Promise<MiniAppSdk | null> {
@@ -96,8 +98,6 @@ async function loadMiniAppSdk(): Promise<MiniAppSdk | null> {
 
   return sdkPromise;
 }
-
-
 
 async function notifyFarcasterReady() {
   if (typeof window === "undefined" || import.meta.env.SSR) {
@@ -227,14 +227,28 @@ export function useFarcaster() {
     const sdk = await loadMiniAppSdk();
     if (!sdk) throw new Error("Farcaster SDK unavailable");
 
-    const provider = await sdk.wallet.getEthereumProvider();
+    const walletApi = sdk.wallet as unknown as {
+      getEthereumProvider?: () => Promise<EthProvider | undefined>;
+      ethProvider?: EthProvider;
+    };
+    const provider =
+      (await walletApi.getEthereumProvider?.().catch(() => undefined)) ?? walletApi.ethProvider;
     if (!provider) throw new Error("No wallet available");
-    const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+
+    // Some hosts already have an authorised account; asking for it first avoids
+    // stacking two modals (connect + sign), which makes the sign prompt vanish.
+    let accounts = (await provider
+      .request({ method: "eth_accounts" })
+      .catch(() => [])) as string[];
+    if (!accounts?.length) {
+      accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+    }
     const address = accounts?.[0];
     if (!address) throw new Error("No wallet address");
+
     const signature = (await provider.request({
       method: "personal_sign",
-      params: [toHex(TERMS_MESSAGE), address as `0x${string}`],
+      params: [toHex(TERMS_MESSAGE), address],
     })) as string;
     return { address, signature };
   }, []);
