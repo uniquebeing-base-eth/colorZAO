@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { serverDb } from "./supabase-db.server";
 
 type QuickAuthClient = {
   verifyJwt: (input: { token: string; domain: string }) => Promise<{ sub?: string | number | null }>;
@@ -72,7 +72,7 @@ export async function upsertPainter(input: {
     row['terms_signature'] = input.signature;
     row['terms_signed_at'] = new Date().toISOString();
   }
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await serverDb()
     .from("painters")
     .upsert(row as never, { onConflict: "fid" })
     .select("fid, username, display_name, pfp_url, wallet_address, terms_signed_at, canvases_painted")
@@ -82,7 +82,7 @@ export async function upsertPainter(input: {
 }
 
 export async function readPainter(fid: number) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await serverDb()
     .from("painters")
     .select("fid, username, display_name, pfp_url, wallet_address, terms_signed_at, canvases_painted")
     .eq("fid", fid)
@@ -94,7 +94,7 @@ export async function readPainter(fid: number) {
 export async function bumpCanvasCount(fid: number) {
   const current = await readPainter(fid);
   if (!current) return;
-  const { error } = await supabaseAdmin
+  const { error } = await serverDb()
     .from("painters")
     .update({ canvases_painted: (current.canvases_painted ?? 0) + 1 } as never)
     .eq("fid", fid);
@@ -116,7 +116,7 @@ export type CritiqueRow = {
 };
 
 export async function insertCritique(row: Omit<CritiqueRow, "id" | "created_at">) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await serverDb()
     .from("critiques")
     .insert(row as never)
     .select(
@@ -129,7 +129,7 @@ export async function insertCritique(row: Omit<CritiqueRow, "id" | "created_at">
 
 
 export async function readCritiques(discoveryId?: string, limit = 200) {
-  let query = supabaseAdmin
+  let query = serverDb()
     .from("critiques")
     .select(
       "id, discovery_id, discovery_type, discovery_title, verdict, reason, comment, anonymous, fid, username, created_at",
@@ -143,7 +143,7 @@ export async function readCritiques(discoveryId?: string, limit = 200) {
 }
 
 export async function readAllCritiquesForStats(limit = 5000) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await serverDb()
     .from("critiques")
     .select("discovery_id, discovery_title, discovery_type, verdict, fid, username, anonymous, created_at")
     .order("created_at", { ascending: false })
@@ -156,14 +156,14 @@ export async function readAllCritiquesForStats(limit = 5000) {
 }
 
 export async function saveNotificationToken(fid: number, token: string, url: string) {
-  const { error } = await supabaseAdmin
+  const { error } = await serverDb()
     .from("notification_tokens")
     .upsert({ fid, token, url, enabled: true } as never, { onConflict: "fid" });
   if (error) console.error("[colorzao] token save failed", error.message);
 }
 
 export async function disableNotifications(fid: number) {
-  const { error } = await supabaseAdmin
+  const { error } = await serverDb()
     .from("notification_tokens")
     .update({ enabled: false } as never)
     .eq("fid", fid);
