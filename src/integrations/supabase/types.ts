@@ -14,7 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      critiques: {
+        Row: {
+          anonymous: boolean
+          comment: string | null
+          created_at: string
+          discovery_id: string
+          discovery_title: string
+          discovery_type: string
+          fid: number | null
+          id: string
+          reason: string
+          username: string | null
+          verdict: string
+        }
+        Insert: {
+          anonymous?: boolean
+          comment?: string | null
+          created_at?: string
+          discovery_id: string
+          discovery_title: string
+          discovery_type: string
+          fid?: number | null
+          id?: string
+          reason: string
+          username?: string | null
+          verdict: string
+        }
+        Update: {
+          anonymous?: boolean
+          comment?: string | null
+          created_at?: string
+          discovery_id?: string
+          discovery_title?: string
+          discovery_type?: string
+          fid?: number | null
+          id?: string
+          reason?: string
+          username?: string | null
+          verdict?: string
+        }
+        Relationships: []
+      }
+      notification_tokens: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          fid: number
+          token: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          fid: number
+          token: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          fid?: number
+          token?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      painters: {
+        Row: {
+          canvases_painted: number
+          created_at: string
+          display_name: string | null
+          fid: number
+          pfp_url: string | null
+          terms_signature: string | null
+          terms_signed_at: string | null
+          updated_at: string
+          username: string | null
+          wallet_address: string | null
+        }
+        Insert: {
+          canvases_painted?: number
+          created_at?: string
+          display_name?: string | null
+          fid: number
+          pfp_url?: string | null
+          terms_signature?: string | null
+          terms_signed_at?: string | null
+          updated_at?: string
+          username?: string | null
+          wallet_address?: string | null
+        }
+        Update: {
+          canvases_painted?: number
+          created_at?: string
+          display_name?: string | null
+          fid?: number
+          pfp_url?: string | null
+          terms_signature?: string | null
+          terms_signed_at?: string | null
+          updated_at?: string
+          username?: string | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
