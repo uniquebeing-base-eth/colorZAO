@@ -60,6 +60,18 @@ export const Route = createFileRoute("/api/public/critique")({
           const { fidFromToken, insertCritique } = await import("@/lib/colorzao.server");
           const domain = new URL(request.url).hostname;
           const fid = await fidFromToken(data.token, domain);
+
+          if (!fid && !data.anonymous) {
+            return json(
+              {
+                ok: false,
+                error: "not_authenticated",
+                details: "Farcaster authentication required to attach your username.",
+              },
+              401,
+            );
+          }
+
           const comment = (data.comment ?? "").trim().slice(0, 400);
           const anonymous = data.anonymous || !fid;
 
