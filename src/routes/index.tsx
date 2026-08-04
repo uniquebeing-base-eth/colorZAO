@@ -3,14 +3,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ExternalLink, Flame, Check, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { PaintCanvas } from "@/components/PaintCanvas";
 import { TopNav } from "@/components/TopNav";
 import { isUserRejection, useFarcaster } from "@/lib/useFarcaster";
 import { haptic, loadMutePreference, sfx, unlockAudio } from "@/lib/fx";
 import { acceptTerms, registerCanvasPainted, submitCritique } from "@/lib/colorzao.api";
+import { loadSession, saveSession } from "@/lib/session";
+import { bumpCount, pushActivity } from "@/lib/activity";
+import { PaintCanvas3D } from "@/components/PaintCanvas3D";
 import {
   artworks,
   discoveries,
+  getDiscovery,
   palette,
   passReasons,
   shuffled,
@@ -80,8 +83,17 @@ function useQueue<T>(items: T[]) {
       return 0;
     });
   }, [items, order.length]);
-  return { current, next };
+  /** Restores a specific item as the current one (used when returning to the canvas). */
+  const restore = useCallback(
+    (item: T) => {
+      setOrder((prev) => [item, ...prev.filter((i) => i !== item)]);
+      setPos(0);
+    },
+    [],
+  );
+  return { current, next, restore };
 }
+
 
 function Gallery() {
   const { ready, inMiniApp, user, getToken, signTerms, openUrl } = useFarcaster();
@@ -100,6 +112,7 @@ function Gallery() {
   const [comment, setComment] = useState("");
   const [anon, setAnon] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitTone, setSubmitTone] = useState<"idle" | "loading" | "success" | "error">(
     "idle",
@@ -110,25 +123,77 @@ function Gallery() {
   const discovery: Discovery = disc.current;
   const reasons = verdict === "smash" ? smashReasons : passReasons;
   const milestone = useRef(0);
+  const restoredReveal = useRef(0);
+  const completed = useRef(false);
   const transitionTimer = useRef<number | null>(null);
 
+  // Restore the exact canvas the painter was on before visiting another screen.
   useEffect(() => {
     loadMutePreference();
-    try {
-      const saved = window.localStorage.getItem("colorzao:canvasNo");
-      if (saved) setCanvasNo(Math.max(1, Number(saved) || 1));
-    } catch {
-      /* ignore */
+    const session = loadSession();
+    if (session.started) {
+      setStarted(true);
+      setCanvasNo(session.canvasNo);
+      setStage(session.stage);
+      setVerdict(session.verdict);
+      setReason(session.reason);
+      setComment(session.comment);
+      setAnon(session.anon);
+      setProgress(session.progress);
+      if (session.artSrc && artworks.includes(session.artSrc)) art.restore(session.artSrc);
+      const saved = getDiscovery(session.discoveryId ?? undefined);
+      if (saved) disc.restore(saved);
+      if (session.progress >= 100) {
+        milestone.current = 4;
+        restoredReveal.current = 100;
+        completed.current = true;
+      }
+    } else {
+      try {
+        const saved = window.localStorage.getItem("colorzao:canvasNo");
+        if (saved) setCanvasNo(Math.max(1, Number(saved) || 1));
+      } catch {
+        /* ignore */
+      }
     }
+    setHydrated(true);
+    // Runs once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       window.localStorage.setItem("colorzao:canvasNo", String(canvasNo));
     } catch {
       /* ignore */
     }
-  }, [canvasNo]);
+    saveSession({
+      started,
+      canvasNo,
+      artSrc: art.current,
+      discoveryId: discovery.id,
+      stage,
+      verdict,
+      reason,
+      comment,
+      anon,
+      progress,
+    });
+  }, [
+    hydrated,
+    started,
+    canvasNo,
+    art.current,
+    discovery.id,
+    stage,
+    verdict,
+    reason,
+    comment,
+    anon,
+    progress,
+  ]);
+
 
   useEffect(() => {
     return () => {
@@ -146,16 +211,22 @@ function Gallery() {
       sfx.milestone();
       void haptic("light");
     }
-    if (p >= 100) {
-      setStage((s) => {
-        if (s !== "paint") return s;
+    if (p >= 100 && !completed.current) {
+      completed.current = true;
+      const key = `colorzao:counted:${canvasNo}`;
+      const alreadyCounted =
+        typeof window !== "undefined" && window.sessionStorage.getItem(key) === "1";
+      if (!alreadyCounted) {
+        if (typeof window !== "undefined") window.sessionStorage.setItem(key, "1");
         sfx.reveal();
         void haptic("success");
+        bumpCount("canvases");
+        pushActivity({ title: "Canvas painted", sub: "Revealed a hidden exhibit" });
         void getToken().then((token) => registerCanvasPainted(token));
-        return "reveal";
-      });
+      }
+      setStage((s) => (s === "paint" ? "reveal" : s));
     }
-  }, [getToken]);
+  }, [getToken, canvasNo]);
 
   const startPainting = async () => {
     unlockAudio();
@@ -223,6 +294,8 @@ function Gallery() {
     setSubmitMessage(null);
     setSubmitTone("idle");
     milestone.current = 0;
+    restoredReveal.current = 0;
+    completed.current = false;
     setCanvasNo((n) => n + 1);
     art.next();
     disc.next();
@@ -277,6 +350,13 @@ function Gallery() {
       void queryClient.invalidateQueries({ queryKey: ["painter"] });
       void router.invalidate();
 
+      bumpCount("critiques");
+      bumpCount(verdict === "smash" ? "smashes" : "passes");
+      pushActivity({
+        title: `${verdict === "smash" ? "🟢 Smash" : "🔴 Pass"} · ${discovery.title}`,
+        sub: reason,
+      });
+
       sfx.success();
       void haptic("success");
       setSubmitTone("success");
@@ -302,7 +382,16 @@ function Gallery() {
   const sheetOpen = stage !== "paint";
   const canvasKey = useMemo(() => `${canvasNo}`, [canvasNo]);
 
+  if (!hydrated) {
+    return (
+      <main className="mx-auto flex h-[100dvh] w-full max-w-md items-center justify-center bg-background">
+        <img src="/colorzao-wordmark.png" alt="ColorZAO" className="w-40 animate-pulse" />
+      </main>
+    );
+  }
+
   if (!started) {
+
     return (
       <main className="mx-auto flex h-[100dvh] w-full max-w-md flex-col items-center justify-center overflow-hidden bg-background px-7 text-center">
         <img
@@ -361,12 +450,13 @@ function Gallery() {
           key={canvasKey}
           className="animate-canvas-in relative min-h-0 flex-1 w-full overflow-hidden rounded-3xl bg-card shadow-soft"
         >
-          <PaintCanvas
+          <PaintCanvas3D
             key={canvasKey}
             src={art.current}
             color={color}
             onProgress={handleProgress}
             onStroke={sfx.brush}
+            initialReveal={restoredReveal.current}
             disabled={stage !== "paint"}
           />
         </div>

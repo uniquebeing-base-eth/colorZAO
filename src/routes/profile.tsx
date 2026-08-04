@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { readActivity, readCounts, type ActivityItem } from "@/lib/activity";
+import { timeAgo } from "@/lib/gallery";
 import { useFarcaster } from "@/lib/useFarcaster";
 import { getPainter } from "@/lib/colorzao.api";
 
@@ -32,16 +35,35 @@ function Profile() {
     queryKey: ["painter"],
     queryFn: async () => getPainter(await getToken()),
     enabled: ready,
-    staleTime: 1000 * 60,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
+  const [local, setLocal] = useState(() => ({
+    counts: readCounts(),
+    activity: [] as ActivityItem[],
+  }));
+
+  useEffect(() => {
+    const sync = () => setLocal({ counts: readCounts(), activity: readActivity() });
+    sync();
+    window.addEventListener("colorzao:activity", sync);
+    window.addEventListener("focus", sync);
+    return () => {
+      window.removeEventListener("colorzao:activity", sync);
+      window.removeEventListener("focus", sync);
+    };
+  }, []);
+
   const painter = data?.painter;
-  const stats = data?.stats ?? {
-    critiques: 0,
-    smashes: 0,
-    passes: 0,
-    canvases: 0,
+  const remote = data?.stats ?? { critiques: 0, smashes: 0, passes: 0, canvases: 0 };
+  // The database is the source of truth; local counters keep guest sessions and
+  // just-submitted critiques visible immediately.
+  const stats = {
+    critiques: Math.max(remote.critiques, local.counts.critiques),
+    smashes: Math.max(remote.smashes, local.counts.smashes),
+    passes: Math.max(remote.passes, local.counts.passes),
+    canvases: Math.max(remote.canvases, local.counts.canvases),
   };
   const profileName = painter?.username
     ? `@${painter.username}`
@@ -56,7 +78,7 @@ function Profile() {
     ["Smashes", String(stats.smashes)],
     ["Passes", String(stats.passes)],
   ];
-  const activity = [] as Array<[string, string, string]>;
+  const activity = local.activity;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-12 pt-5">
@@ -89,9 +111,9 @@ function Profile() {
           : "Your latest critique stats update automatically."}
       </p>
 
-      <div className="mt-5 rounded-3xl bg-primary/10 p-4 text-primary-foreground">
+      <div className="mt-5 rounded-3xl bg-secondary p-4 text-foreground">
         <p className="text-sm font-semibold">Profile status</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-primary-foreground/90">
+        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
           {profileLabel === "Guest"
             ? "You are browsing as a guest. Open ColorZAO in Farcaster to sync your stats."
             : "Your critique history and painter stats are loaded from your Farcaster account."}
@@ -122,17 +144,19 @@ function Profile() {
           </div>
         ) : (
           <ul className="space-y-2">
-            {activity.map(([title, sub, time]) => (
+            {activity.map((item) => (
               <li
-                key={title}
+                key={item.id}
                 className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-soft"
               >
                 <span className="h-10 w-10 rounded-xl bg-brand-gradient opacity-90" />
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-foreground">{title}</span>
-                  <span className="block text-xs text-muted-foreground">{sub}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-foreground">
+                    {item.title}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">{item.sub}</span>
                 </span>
-                <span className="text-xs text-muted-foreground">{time}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(item.at)}</span>
               </li>
             ))}
           </ul>
