@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { listCritiques } from "@/lib/colorzao.api";
+import { TypeBadge, VerdictBadge } from "@/components/CritiqueBadges";
+
 import {
   discoveryGroups,
   getDiscovery,
@@ -115,34 +117,35 @@ function Feedback() {
               loading="lazy"
               width={1024}
               height={1280}
-              className="h-14 w-14 shrink-0 rounded-xl object-cover"
+              className="h-16 w-16 shrink-0 rounded-xl object-cover"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="truncate text-[13px] font-bold text-foreground">
-                  {row.discovery_title}
-                </h2>
-                <span className="shrink-0 text-[10px] text-muted-foreground">
-                  {timeAgo(row.created_at)}
-                </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <TypeBadge discoveryId={row.discovery_id} type={row.discovery_type} />
+                <VerdictBadge verdict={row.verdict} />
               </div>
+              <h2 className="mt-1 truncate text-[13px] font-bold text-foreground">
+                {row.discovery_title}
+              </h2>
               <p className="truncate text-[11px] text-muted-foreground">
-                {getDiscovery(row.discovery_id)?.creator ?? row.discovery_type}
+                by {getDiscovery(row.discovery_id)?.creator ?? row.discovery_type}
               </p>
-              <p className="mt-1 text-[12px] font-semibold text-foreground">
-                {row.verdict === "smash" ? "🔥" : "➡️"} {row.reason}
-              </p>
+              <p className="mt-1 text-[12px] font-semibold text-foreground">{row.reason}</p>
               {row.comment && (
                 <p className="mt-0.5 text-[12px] leading-snug text-foreground/80">
                   “{row.comment}”
                 </p>
               )}
-              <p className="mt-1 text-[10px] font-medium text-accent">
-                {row.anonymous || !row.username ? "Anonymous" : `@${row.username}`}
+              <p className="mt-1.5 text-[10px] font-medium text-muted-foreground">
+                <span className="font-semibold text-accent">
+                  {row.anonymous || !row.username ? "Anonymous" : `@${row.username}`}
+                </span>{" "}
+                • {timeAgo(row.created_at)}
               </p>
             </div>
           </article>
         ))}
+
       </div>
     </main>
   );
